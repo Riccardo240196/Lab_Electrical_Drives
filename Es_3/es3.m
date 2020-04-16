@@ -71,15 +71,15 @@ title('Qualitative profile of duty cycle', 'interpreter', 'latex')
 
 I_int = @(t) interp1(time, I.^2, t);
 d_int = @(t) interp1(time, delta, t);
-Irms = sqrt(1/1.2*simpcomp(0, 5, 800, I_int));
+Irms = sqrt(1/5*simpcomp(0, 5, 800, I_int));
 d_avg = 1/5*simpcomp(0, 5, 800, d_int);
 
 % From datasheet
-V_CE = 1.8;        % [V]  Voltage drop in the IGBT     (conduction losses)
-V_AK = 1.57;       % [V]  Voltage drop in the Diode    (conduction losses)
-Eon = 1.7e-3;      % [Ws] Energy lost in on phase IGBT  (switching losses)
-Eoff = 1.5e-3;     % [Ws] Energy lost in off phase IGBT (switching losses)
-dI = 1250e6;       % [A/s] 
+V_CE = 1.4;        % [V]  Voltage drop in the IGBT     (conduction losses)
+V_AK = 1.3;        % [V]  Voltage drop in the Diode    (conduction losses)
+Eon = 1.2e-3;      % [Ws] Energy lost in on phase IGBT  (switching losses)
+Eoff = 1.2e-3;     % [Ws] Energy lost in off phase IGBT (switching losses)
+dI = 550e6;        % [A/s] 
 
 % Conduction losses
 Pcond_IGBT = Irms*V_CE*d_avg;       % IGBT
@@ -103,12 +103,31 @@ theta_HS = theta_amb + (Ptot_IGBT + Ptot_diode)*Rd;
 % microseconds that is higher than the typical turn on/off time of the
 % considered devices.
 
-Irms_max = 35;
+Irms_max = max(I);
 d_max = 0.98;
 d_min = 0.02;
-Rth_jc = 0.35;      % [K/W] from datasheet, IGBT
-Rth_ch = 0.05;      % [K/W] from datasheet, Module 
-Rth_jcD = 0.72;     % [K/W] from datasheet, Diode
+
+% From datasheet
+V_CE = 1.7;        % [V]   Voltage drop in the IGBT     (conduction losses)
+V_AK = 1.5;        % [V]   Voltage drop in the Diode    (conduction losses)
+Eon = 1.5e-3;      % [Ws]  Energy lost in on phase IGBT  (switching losses)
+Eoff = 1.5e-3;     % [Ws]  Energy lost in off phase IGBT (switching losses)
+dI = 1050e6;       % [A/s] 
+Rth_jc = 0.35;     % [K/W] from datasheet, IGBT
+Rth_ch = 0.05;     % [K/W] from datasheet, Module 
+Rth_jcD = 0.72;    % [K/W] from datasheet, Diode
+
+% Conduction losses
+Pcond_IGBT = Irms_max*V_CE*d_max;       % IGBT
+Pcond_diode = Irms_max*V_AK*(1-d_min);  % Diode
+
+% Switching losses
+Pswitch_IGBT = (Eon+Eoff)*fs;       % IGBT
+Pswitch_diode = 0.5*V*Irms_max^2/dI;    % Diode
+
+% Total losses
+Ptot_IGBT = Pcond_IGBT + Pswitch_IGBT;      % IGBT
+Ptot_diode = Pcond_diode + Pswitch_diode;   % diode
 
 theta_IGBT = theta_HS + Ptot_IGBT*(Rth_jc+Rth_ch);
 theta_diode = theta_HS + Ptot_diode*(Rth_jcD+Rth_ch);
