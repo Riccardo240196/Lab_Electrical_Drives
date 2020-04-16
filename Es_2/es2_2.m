@@ -156,7 +156,7 @@ ylim([110 135])
 
 thetaON_int = @(t) interp1(timeON, thetaON(timeON), t);
 thetaOFF_int = @(t) interp1(timeOFF, thetaOFF(timeOFF), t);
-theta_avg = 1/T*(simpcomp(0, ton, 800, thetaON_int)+simpcomp(ton, T, 800, thetaOFF_int));
+theta_avg = 1/T*(simpcomp(0, ton, 800, thetaON_int)+simpcomp(ton, T, 800, thetaOFF_int))+theta_amb;
 R = (234.5+theta_avg)/(234.5+theta_0)*Rw/2; 
 Pcu = PtotON-Pfe_avg;
 Irms = sqrt(Pcu/(3*R));
@@ -223,7 +223,7 @@ ylabel('motor temperature [$^{\circ}$C]', 'interpreter', 'latex');
 title('Motor temperature profile: limited time duty','interpreter', 'latex');
 
 % Maximum mass weigth
-theta_avg_lim = 1/T*(simpcomp(0, T, 800, theta_lim));
+theta_avg_lim = 1/T*(simpcomp(0, T, 800, theta_lim))+theta_amb;
 R = (234.5+theta_avg_lim)/(234.5+theta_0)*Rw/2; 
 Pcu = Ptot_lim-Pfe_avg;
 Irms = sqrt(Pcu/(3*R));
@@ -248,7 +248,7 @@ while bool == 0
     end
     Tm_int = @(t) interp1(time, Tm.^2, t);
     Trms_old = sqrt(1/1.2*simpcomp(0, 1.2, 800, Tm_int));
-    if Trms_new > Trms_old
+    if Trms_lim_new > Trms_old
         Jtot_max_lim = j*Jtot;
     end
     j = j+0.25;
