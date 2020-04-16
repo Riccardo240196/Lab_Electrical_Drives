@@ -76,7 +76,6 @@ B1=subs(B_syms,w,wp_i*1i);
 kp_i = double(1/abs(B1)*cos(-pi+phiM_i-angle(B1)));
 ki_i = double(-wp_i/abs(B1)*sin(-pi+phiM_i-angle(B1)));
 Gi = (kp_i+ki_i/s)*Bi;
-%Li = 1/Hi*Gi/(1+Gi);
 Li = feedback(Gi / Hi, Hi);
 
 [Gmi,Pmi]=margin(Gi);
@@ -118,12 +117,15 @@ bit_I = 12;
 bit_PWM = 10;
 ppr_speed = 2000;
 
-t_f = 30;
+t_f = 0.5;
 
 t = sim('es_4.slx', t_f);
 
 figure()
 plot(t, Om_input.Data(:), '--r');
 hold on;
+grid on;
 plot(t, Om_output.Data(:), 'b');
-title('Step response')
+title('Step response','interpreter','latex')
+ylabel('$\omega_{out}$', 'Interpreter', 'latex','fontsize',14)
+xlabel('Time [s]', 'Interpreter', 'latex')
