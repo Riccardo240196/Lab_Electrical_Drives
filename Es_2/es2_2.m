@@ -163,19 +163,19 @@ Pcu = PtotON-Pfe;
 Irms = sqrt(Pcu/(3*R));
 Trms_new = Kt*Irms;
 Trms_old = Trms;
-Jtot_max = Jtot;
-j = 1;
+Jtot_max = 1e-3;
+j = 1e-4;
 bool = 0;
 
 % Here we calculate the new total moment of inertia.
 while bool == 0 
     for i = 1:length(time)
-        if time(i) < 0.3999
+        if time(i) < 0.399999
             Tm(i) = Jtot_max*omega_p(i) + Tres;
-        elseif time(i) > 0.4 && time(i) < 0.6
+        elseif time(i) >= 0.4 && time(i) < 0.6
             Tm(i) = 0;
         elseif time(i) > 0.6 && time(i) < 1
-            Tm(i) = Jtot_max*omega_p(i);
+            Tm(i) = (Jmot+Jtrans)*omega_p(i);
         else
             Tm(i) = 0;
         end
@@ -183,27 +183,27 @@ while bool == 0
     Tm_int = @(t) interp1(time, Tm.^2, t);
     Trms_old = sqrt(1/1.2*simpcomp(0, 1.2, 800, Tm_int));
     if Trms_new > Trms_old
-        Jtot_max = j*Jtot;
+        Jtot_max = 1e-3+j;
     end
-    j = j+0.25;
-    delta = (Trms_new - Trms_old);
-    if delta > 0.1 && delta > -0.1
+    j = j+1e-6;
+    delta = abs(Trms_new - Trms_old);
+    if delta > 1e-3 
         bool = 0;
     else
         bool = 1;
     end
 end
 
-m_max = (Jtot_max-Jtrans-Jmot)*k^2;
+m_max = (Jtot_max-Jtrans-Jmot)*(k^2);
 Tmax = max(Tres + Jtot_max.*omega_p);
 if Tmax < Tpk
-    fprintf('Also considering the new maximum mass %3.1f kg, the max torque is %2.2f and is less than the peak torque. \n',m_max,  Tmax)
+    fprintf('Also considering the new maximum mass %3.1f kg, the max torque is %2.2f N and is less than the peak torque. \n',m_max,  Tmax)
 else
-    fprintf('Considering the new maximum mass %3.1f, the max torque is higher than Tpk. Trying with another method: \n',m_max)
+    fprintf('Considering the new maximum mass %3.1f kg, the max torque is higher than Tpk. Trying with another method: \n',m_max)
     Jtot_max = (Tpk-Tres)/max(omega_p);
     m_max = (Jtot_max-Jtrans-Jmot)*k^2;
     Tmax = max(Tres + Jtot_max.*omega_p);
-    fprintf('The max mass is %3.1f and the max torque is %2.2f ',m_max,  Tmax)
+    fprintf('The max mass is %3.1f kg and the max torque is %2.2f N',m_max,  Tmax)
 end
 
 %% Limited time duty
@@ -230,8 +230,8 @@ Pcu = Ptot_lim-Pfe;
 Irms = sqrt(Pcu/(3*R));
 Trms_lim_new = Kt*Irms;
 Trms_old = Trms;
-Jtot_max_lim = Jtot;
-j = 1;
+Jtot_max_lim = 1e-3;
+j = 1e-4;
 bool = 0;
 
 % Here we calculate the new total moment of inertia.
@@ -242,19 +242,19 @@ while bool == 0
         elseif time(i) > 0.4 && time(i) < 0.6
             Tm(i) = 0;
         elseif time(i) > 0.6 && time(i) < 1
-            Tm(i) = Jtot_max_lim*omega_p(i);
+            Tm(i) = (Jmot+Jtrans)*omega_p(i);
         else
             Tm(i) = 0;
         end
     end
     Tm_int = @(t) interp1(time, Tm.^2, t);
-    Trms_old = sqrt(1/1.2*simpcomp(0, 1.2, 800, Tm_int));
+    Trms_old = sqrt(1/T*simpcomp(0, 1.2, 800, Tm_int)*1500);
     if Trms_lim_new > Trms_old
-        Jtot_max_lim = j*Jtot;
+        Jtot_max_lim = 1e-3+j;
     end
-    j = j+0.25;
-    delta = (Trms_lim_new - Trms_old);
-    if delta > 0.1 && delta > -0.1
+    j = j+1e-6;
+    delta = abs(Trms_lim_new - Trms_old);
+    if delta > 1e-3 
         bool = 0;
     else
         bool = 1;
@@ -263,15 +263,12 @@ end
 
 m_max_lim = (Jtot_max_lim-Jtrans-Jmot)*k^2;
 Tmax_lim = max(Tres + Jtot_max_lim.*omega_p);
-if Tmax_lim < Tpk
-    fprintf('Also considering the new maximum mass %3.1f kg, the max torque is %2.2f and is less than the peak torque.',m_max_lim,  Tmax_lim)
+if Tmax_lim <= Tpk
+    fprintf('Also considering the new maximum mass %3.1f kg, the max torque is %2.2f N and is less than the peak torque.',m_max_lim,  Tmax_lim)
 else
-    fprintf('Considering the new maximum mass %3.1f, the max torque is higher than Tpk. Trying with another method: \n',m_max_lim)
-    Jtot_max = (Tpk-Tres)/max(omega_p);
+    fprintf('Considering the new maximum mass %3.1f kg, the max torque is higher than Tpk. Trying with another method: \n',m_max_lim)
+    Jtot_max_lim = (Tpk-Tres)/max(omega_p);
     m_max_lim = (Jtot_max_lim-Jtrans-Jmot)*k^2;
-    Tmax_lim = max(Tres + Jtot_max.*omega_p);
-    fprintf('The max mass is %3.1f and the max torque is %2.2f .',m_max_lim,  Tmax_lim)
+    Tmax_lim = max(Tres + Jtot_max_lim.*omega_p);
+    fprintf('The max mass is %3.1f kg and the max torque is %2.2f N.',m_max_lim,  Tmax_lim)
 end
-
-
-
