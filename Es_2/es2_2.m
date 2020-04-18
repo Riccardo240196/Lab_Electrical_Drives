@@ -97,22 +97,23 @@ theta_0 = 20;                   % [°C] Reference temperature
 % summed to obtain the total power losses. Then, with an iterative process 
 % the motor temperature is calculated.
 
-Kfe = L0/omega_n;               % Iron losses coefficient 
-Pfe_avg = Kfe*omega_avg;        % Average iron power losses
-Irms = Trms/Kt;                 % RMS current
-R_ph_in = Rw/2;                 % Winding resistance
-toll = 1e-4;                    % Tolerance
-thetaM_in = 50;                 % First guess
-thetaM_out = thetaM_in+10*toll; % First guess
+w_int = @(t) abs(k*v(t));
+Kfe = L0/omega_n;                               % Iron losses coefficient 
+Pfe = Kfe*1/1.2*simpcomp(0, 1.2, 800, (w_int)); % Average iron power losses
+Irms = Trms/Kt;                                 % RMS current
+R_ph_in = Rw/2;                                 % Winding resistance
+toll = 1e-4;                                    % Tolerance
+thetaM_in = 50;                                 % First guess
+thetaM_out = thetaM_in+10*toll;                 % First guess
 
 while abs(thetaM_in - thetaM_out) > toll
     R_ph = R_ph_in;
     Pcu = 3*R_ph*Irms^2;
-    Ptot = Pfe_avg+Pcu;
+    Ptot = Pfe+Pcu;
     thetaM_in = Ptot*Rth+theta_amb;
     R_ph_out = (234.5+thetaM_in)/(234.5+theta_0)*Rw/2;
     Pcu = 3*R_ph_out*Irms^2;
-    Ptot = Pfe_avg+Pcu;
+    Ptot = Pfe+Pcu;
     thetaM_out = Ptot*Rth+theta_amb;
     R_ph_in = R_ph_out;
 end
@@ -158,7 +159,7 @@ thetaON_int = @(t) interp1(timeON, thetaON(timeON), t);
 thetaOFF_int = @(t) interp1(timeOFF, thetaOFF(timeOFF), t);
 theta_avg = 1/T*(simpcomp(0, ton, 800, thetaON_int)+simpcomp(ton, T, 800, thetaOFF_int))+theta_amb;
 R = (234.5+theta_avg)/(234.5+theta_0)*Rw/2; 
-Pcu = PtotON-Pfe_avg;
+Pcu = PtotON-Pfe;
 Irms = sqrt(Pcu/(3*R));
 Trms_new = Kt*Irms;
 Trms_old = Trms;
@@ -225,7 +226,7 @@ title('Motor temperature profile: limited time duty','interpreter', 'latex');
 % Maximum mass weigth
 theta_avg_lim = 1/T*(simpcomp(0, T, 800, theta_lim))+theta_amb;
 R = (234.5+theta_avg_lim)/(234.5+theta_0)*Rw/2; 
-Pcu = Ptot_lim-Pfe_avg;
+Pcu = Ptot_lim-Pfe;
 Irms = sqrt(Pcu/(3*R));
 Trms_lim_new = Kt*Irms;
 Trms_old = Trms;
