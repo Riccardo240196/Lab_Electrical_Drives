@@ -1,8 +1,9 @@
 clear all; close all; clc; 
 
 %%  Data 
-% The aim of this lab is to defining the operating range for a PMSM 
-% (AC brushless) for small traction application.
+% The aim of this lab is to size a car battery meeting mass and autonomy 
+% requirements. Two possibilities are analyzed: Lead-acid battery and
+% Li-ion one.
 % The initial data that we consider in this lab are the following:
 
 v_max = 90/3.6;         % [m/s]     Maximum car speed
@@ -151,21 +152,22 @@ fprintf('\n------------------------------------------\n\n')
 mbatt_E = Ebatt_totPb/Esp_Pb;
 mbatt_P = max(P(time))/Psp_Pb;
 mbatt_in = max(mbatt_E,mbatt_P);
-mbatt_out = mbatt_in + 1;
+mbatt_out = mbatt_in;
+mtot = m + 2*mp + ml + mbatt_in;
 
-while abs(mbatt_in-mbatt_out) > 1e-3 
-    mbatt_in = mbatt_out;
-    mtot = m + 2*mp + ml + mbatt_in;
-    Ftot = mtot*([a 0]+g*sin(theta)+g*f*cos(theta)) + 0.5*rho*S*Cd.*(v(time).^2);
-    P = @(t) interp1(time, Ftot.*v(time) , t);
-    Ecycle = simpcomp(0, tf, 400, P)/3600;
-    Ebatt_c = Ecycle/eta_batt/eta_mot/eta_tran;
-    Ebatt_c_Pb = Ebatt_c;
-    Ebatt_totPb = Ebatt_c_Pb*n_cycle;
-    mbatt_E = Ebatt_totPb/Esp_Pb;
-    mbatt_P = max(P(time))/Psp_Pb;
-    mbatt_out = max(mbatt_E,mbatt_P);
-end
+% while abs(mbatt_in-mbatt_out) > 1e-3 
+%     mbatt_in = mbatt_out;
+%     mtot = m + 2*mp + ml + mbatt_in;
+%     Ftot = mtot*([a 0]+g*sin(theta)+g*f*cos(theta)) + 0.5*rho*S*Cd.*(v(time).^2);
+%     P = @(t) interp1(time, Ftot.*v(time) , t);
+%     Ecycle = simpcomp(0, tf, 400, P)/3600;
+%     Ebatt_c = Ecycle/eta_batt/eta_mot/eta_tran;
+%     Ebatt_c_Pb = Ebatt_c;
+%     Ebatt_totPb = Ebatt_c_Pb*n_cycle;
+%     mbatt_E = Ebatt_totPb/Esp_Pb;
+%     mbatt_P = max(P(time))/Psp_Pb;
+%     mbatt_out = max(mbatt_E,mbatt_P);
+% end
 
 if mtot <= mtot_max
     mbatt_Pb = mbatt_out;
@@ -212,9 +214,6 @@ fprintf('s(m_{max}) = %2.2f  [km]\n\t',smax_Pb*1e-3)
 fprintf('C_{recharge} = %2.2f  [€]\n\t',C_recharge_Pb)
 fprintf('\n------------------------------------------\n\n')
 
-% Since the lead-acid battery cannot satisfy both the constraints on 
-% autonomy and mass, the lithium-ion kind of batteries is chosen.
-
 %% Urban route with positive slope
 % Now, we consider the urban cycle with a 10% positive slope. Considering
 % this new configuration, is possible to evaluate the new forces, power
@@ -231,19 +230,19 @@ n_cycleLi_pend = Ebatt_totLi/Ebatt_c_Li;
 s_maxLi_pend = s*n_cycleLi_pend;
 
 % Lead-acid Battery:
-% Ftot = mtot_Pb*([a 0]+g*sin(theta)+g*f*cos(theta)) + 0.5*rho*S*Cd.*(v(time).^2);
-% P = @(t) interp1(time, Ftot.*v(time) , t);
-% Ecycle = simpcomp(0, tf, 400, P)/3600;
-% Ebatt_c = Ecycle/eta_batt/eta_mot/eta_tran;
-% Ebatt_c_Pb = Ebatt_c;
-% n_cyclePb_pend = Ebatt_totPb/Ebatt_c_Pb;
-% s_maxPb_pend = s*n_cyclePb_pend;
+Ftot = mtot_Pb*([a 0]+g*sin(theta)+g*f*cos(theta)) + 0.5*rho*S*Cd.*(v(time).^2);
+P = @(t) interp1(time, Ftot.*v(time) , t);
+Ecycle = simpcomp(0, tf, 400, P)/3600;
+Ebatt_c = Ecycle/eta_batt/eta_mot/eta_tran;
+Ebatt_c_Pb = Ebatt_c;
+n_cyclePb_pend = Ebatt_totPb/Ebatt_c_Pb;
+s_maxPb_pend = s*n_cyclePb_pend;
 
 fprintf('\n\n------------------------------------------\n\n\t')
-% fprintf('Lead-acid Battery:\n\t')
-% fprintf('s_{pend} = %2.1f  [km]\n\t',s_maxPb_pend*1e-3)
+fprintf('Lead-acid Battery:\n\t')
+fprintf('s_{pend} = %2.2f  [km]\n\t',s_maxPb_pend*1e-3)
 fprintf('Li-ion Battery:\n\t')
-fprintf('s_{pend} = %2.1f  [km]\n\t',s_maxLi_pend*1e-3)
+fprintf('s_{pend} = %2.2f  [km]\n\t',s_maxLi_pend*1e-3)
 fprintf('\n------------------------------------------\n\n')
 
 %% Extra-Urban cycle
@@ -258,15 +257,17 @@ T = Ebatt_totLi*3600/P;
 s_maxLi_ex = T*v_max;
 
 % Lead-acid Battery:
-% Ftot = mtot_Pb*g*f + 0.5*rho*S*Cd.*(v_max.^2);
-% P = Ftot.*v_max;
-% T = Ebatt_totPb/P;
-% s_maxPb_ex = T*v_max;
+Ftot = mtot_Pb*g*f + 0.5*rho*S*Cd.*(v_max.^2);
+P = Ftot.*v_max;
+T = Ebatt_totPb*3600/P;
+s_maxPb_ex = T*v_max;
 
 fprintf('\n\n------------------------------------------\n\n\t')
-% fprintf('Lead-acid Battery:\n\t')
-% fprintf('s_{pend} = %2.1f  [km]\n\t',s_maxPb_ex*1e-3)
+fprintf('Lead-acid Battery:\n\t')
+fprintf('s_{pend} = %2.2f  [km]\n\t',s_maxPb_ex*1e-3)
 fprintf('Li-ion Battery:\n\t')
-fprintf('s_{extra} = %2.1f  [km]\n\t',s_maxLi_ex*1e-3)
+fprintf('s_{extra} = %2.2f  [km]\n\t',s_maxLi_ex*1e-3)
 fprintf('\n------------------------------------------\n\n')
 
+% Since the lead-acid battery cannot satisfy both the constraints on 
+% autonomy and mass, the lithium-ion kind of batteries is chosen.
